@@ -10,3 +10,5 @@ step 3: once you have completed step 2 go to file explorer and open this file in
 for the mobile version ensure you copy and paste from the monile options section not the beta options 
 
 now for mobile you will need to copy the source code into a html converter a free one is TrebEdit once you have done that press the three dots button and press save as and name it whatevery you want but replace spaces with _ or - and end the file name with .html and then go to your files application and open it again if it does not work contact me using omriphoenix@gmail.com
+
+or alternitivly you can download the file that works aswell and is easier.
