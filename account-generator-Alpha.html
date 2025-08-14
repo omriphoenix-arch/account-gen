@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pro Account Generator - Full Enhanced</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+        color: #333;
+    }
+    h1 { text-align: center; }
+    .container {
+        max-width: 1100px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0px 2px 8px rgba(0,0,0,0.2);
+    }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    select, input, button {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    .flex { display: flex; gap: 10px; }
+    table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+    }
+    table, th, td { border: 1px solid #aaa; }
+    th, td { padding: 8px; text-align: left; }
+    .export-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Pro Account Generator</h1>
+    
+    <label>Account Type</label>
+    <select id="accountType">
+        <option value="email">Email</option>
+        <option value="social">Social Media</option>
+        <option value="youtube">YouTube</option>
+    </select>
+    
+    <div id="emailProviderDiv" style="display:none;">
+        <label>Email Provider</label>
+        <select id="emailProvider">
+            <option value="@gmail.com">Gmail</option>
+            <option value="@yahoo.com">Yahoo</option>
+            <option value="@outlook.com">Outlook</option>
+            <option value="custom">Custom Domain</option>
+        </select>
+        <input type="text" id="customDomain" placeholder="Enter custom domain (e.g., mysite.com)" style="display:none;">
+    </div>
+    
+    <label>Username Pattern</label>
+    <select id="usernamePattern">
+        <option value="nameNum">{name}{number}</option>
+        <option value="adjNounNum">{adjective}{noun}{number}</option>
+        <option value="nameYear">{name}.{year}</option>
+        <option value="wordNum">{random_word}_{number}</option>
+    </select>
+    
+    <label>Base Name (optional)</label>
+    <input type="text" id="baseName" placeholder="Leave blank for random generation">
+    
+    <label>Number of Accounts</label>
+    <input type="number" id="accountCount" min="1" max="1000" value="5">
+    
+    <label>Password Length</label>
+    <input type="number" id="passwordLength" min="6" max="50" value="12">
+    
+    <label>Date of Birth Range (Age)</label>
+    <div class="flex">
+        <input type="number" id="minAge" min="1" max="100" value="18">
+        <input type="number" id="maxAge" min="1" max="100" value="65">
+    </div>
+    
+    <label>Include Phone Number?</label>
+    <select id="phoneOption">
+        <option value="no">No</option>
+        <option value="us">US</option>
+        <option value="uk">UK</option>
+        <option value="de">Germany</option>
+    </select>
+    
+    <label>Include Fake Address?</label>
+    <select id="addressOption">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+    </select>
+    
+    <label>Include Security Questions?</label>
+    <select id="securityOption">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+    </select>
+    
+    <button onclick="generateAccounts()">Generate Accounts</button>
+    
+    <div class="export-buttons">
+        <button onclick="exportData('csv')">Export CSV</button>
+        <button onclick="exportData('json')">Export JSON</button>
+    </div>
+    
+    <table id="previewTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Password</th>
+                <th>DOB</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Security Q&A</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+const adjectives = ["Cool", "Fast", "Happy", "Lucky", "Smart"];
+const nouns = ["Tiger", "Eagle", "Shark", "Wolf", "Bear"];
+const words = ["alpha", "nova", "pulse", "vibe", "flux"];
+const streets = ["Main St", "Oak Ave", "Pine Rd", "Maple Dr", "Cedar Ln"];
+const cities = ["New York", "London", "Berlin", "Chicago", "Toronto"];
+const states = ["NY", "CA", "TX", "FL", "ON"];
+const countries = ["USA", "UK", "Germany", "Canada"];
+const questions = [
+    "What was the name of your first pet?",
+    "What city were you born in?",
+    "What is your mother's maiden name?",
+    "What was your childhood nickname?",
+    "What is the name of your first school?"
+];
+
+document.getElementById("accountType").addEventListener("change", function() {
+    document.getElementById("emailProviderDiv").style.display = this.value === "email" ? "block" : "none";
+});
+
+document.getElementById("emailProvider").addEventListener("change", function() {
+    document.getElementById("customDomain").style.display = this.value === "custom" ? "block" : "none";
+});
+
+function randomItem(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateUsername(pattern, baseName) {
+    let number = Math.floor(Math.random() * 900 + 100);
+    let year = Math.floor(Math.random() * 23 + 2000);
+    switch(pattern) {
+        case "nameNum": return baseName + number;
+        case "adjNounNum": return randomItem(adjectives) + randomItem(nouns) + number;
+        case "nameYear": return baseName + "." + year;
+        case "wordNum": return randomItem(words) + "_" + number;
+    }
+}
+
+function generatePassword(length) {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+    let pass = "";
+    for (let i = 0; i < length; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+    return pass;
+}
+
+function randomDOB(minAge, maxAge) {
+    const today = new Date();
+    const startYear = today.getFullYear() - maxAge;
+    const endYear = today.getFullYear() - minAge;
+    const year = Math.floor(Math.random() * (endYear - startYear + 1)) + startYear;
+    const month = String(Math.floor(Math.random() * 12) + 1).padStart(2,"0");
+    const day = String(Math.floor(Math.random() * 28) + 1).padStart(2,"0");
+    return `${year}-${month}-${day}`;
+}
+
+function randomPhone(country) {
+    switch(country) {
+        case "us": return "+1 " + Math.floor(100 + Math.random()*900) + "-" + Math.floor(100 + Math.random()*900) + "-" + Math.floor(1000 + Math.random()*9000);
+        case "uk": return "+44 " + Math.floor(1000 + Math.random()*9000) + " " + Math.floor(100000 + Math.random()*900000);
+        case "de": return "+49 " + Math.floor(100 + Math.random()*900) + " " + Math.floor(100000 + Math.random()*900000);
+        default: return "";
+    }
+}
+
+function randomAddress() {
+    return `${Math.floor(Math.random() * 9999)} ${randomItem(streets)}, ${randomItem(cities)}, ${randomItem(states)}, ${randomItem(countries)}, ${Math.floor(10000 + Math.random() * 90000)}`;
+}
+
+function randomSecurityQA() {
+    return `${randomItem(questions)} => ${randomItem(words) + Math.floor(Math.random()*100)}`;
+}
+
+let generatedAccounts = [];
+
+function generateAccounts() {
+    const type = document.getElementById("accountType").value;
+    const provider = document.getElementById("emailProvider").value;
+    const customDomain = document.getElementById("customDomain").value;
+    const pattern = document.getElementById("usernamePattern").value;
+    const baseName = document.getElementById("baseName").value || randomItem(words);
+    const count = parseInt(document.getElementById("accountCount").value);
+    const passLen = parseInt(document.getElementById("passwordLength").value);
+    const minAge = parseInt(document.getElementById("minAge").value);
+    const maxAge = parseInt(document.getElementById("maxAge").value);
+    const phoneOpt = document.getElementById("phoneOption").value;
+    const addressOpt = document.getElementById("addressOption").value;
+    const securityOpt = document.getElementById("securityOption").value;
+    
+    generatedAccounts = [];
+    for (let i = 0; i < count; i++) {
+        let username = generateUsername(pattern, baseName);
+        if (type === "email") {
+            let domain = provider === "custom" ? "@" + customDomain : provider;
+            username += domain;
+        }
+        let password = generatePassword(passLen);
+        let dob = randomDOB(minAge, maxAge);
+        let phone = phoneOpt !== "no" ? randomPhone(phoneOpt) : "";
+        let address = addressOpt === "yes" ? randomAddress() : "";
+        let security = securityOpt === "yes" ? randomSecurityQA() : "";
+        generatedAccounts.push({username, password, dob, phone, address, security});
+    }
+    renderPreview();
+}
+
+function renderPreview() {
+    const table = document.getElementById("previewTable");
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+    generatedAccounts.forEach(acc => {
+        let row = `<tr>
+            <td>${acc.username}</td>
+            <td>${acc.password}</td>
+            <td>${acc.dob}</td>
+            <td>${acc.phone}</td>
+            <td>${acc.address}</td>
+            <td>${acc.security}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+    table.style.display = "table";
+}
+
+function exportData(format) {
+    let content = "";
+    if (format === "csv") {
+        content = "Username,Password,DOB,Phone,Address,Security_QA\n" +
+            generatedAccounts.map(a => `${a.username},${a.password},${a.dob},${a.phone},${a.address},${a.security}`).join("\n");
+        downloadFile("accounts.csv", content);
+    } else if (format === "json") {
+        content = JSON.stringify(generatedAccounts, null, 2);
+        downloadFile("accounts.json", content);
+    }
+}
+
+function downloadFile(filename, content) {
+    const blob = new Blob([content], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+</script>
+</body>
+</html>

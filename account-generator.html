@@ -1,0 +1,602 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pro Account Generator — Upgraded</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --fg:#1e2329; --muted:#606b78; --card:#ffffff; --border:#e3e7ee;
+    --primary:#2563eb; --primary-600:#1e4fd8; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+  }
+  body.dark{
+    --bg:#0f1115; --fg:#e5e7eb; --muted:#9aa4b2; --card:#171a21; --border:#2a2f3a;
+    --primary:#60a5fa; --primary-600:#3b82f6; --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:var(--bg); color:var(--fg); padding:32px;
+  }
+  .container{max-width:1000px;margin:auto}
+  h1{margin:0 0 10px;font-size:28px}
+  p.sub{margin:0 0 24px;color:var(--muted)}
+  .grid{display:grid; gap:16px}
+  @media(min-width:900px){ .grid{ grid-template-columns: 1.2fr 1fr } }
+
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.05);
+  }
+  .row{display:flex; gap:12px}
+  .row>*{flex:1}
+
+  label{font-weight:600; display:block; margin:.3rem 0 .35rem}
+  input[type=text], input[type=number], input[type=email], select{
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:transparent; color:inherit
+  }
+  input[type=checkbox]{transform:translateY(2px)}
+  .muted{color:var(--muted); font-size:.92rem}
+
+  button{
+    appearance:none; border:1px solid var(--border); background:var(--primary); color:white;
+    padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600
+  }
+  button.secondary{ background:transparent; color:var(--fg) }
+  button:disabled{opacity:.6; cursor:not-allowed}
+
+  /* collapsible */
+  details{border:1px solid var(--border); border-radius:12px; padding:0; background:var(--card)}
+  summary{
+    list-style:none; cursor:pointer; user-select:none; padding:14px 16px; font-weight:700;
+    display:flex; align-items:center; gap:10px
+  }
+  summary::marker{display:none}
+  .chev{transition:transform .2s ease}
+  details[open] .chev{transform:rotate(90deg)}
+  .panel{padding:0 16px 16px}
+
+  /* strength meter */
+  .strength{
+    height:10px; background:#d7dbe3; border-radius:999px; overflow:hidden; position:relative
+  }
+  .strength>div{
+    height:100%; width:0%; background:linear-gradient(90deg,var(--bad),var(--warn),var(--ok));
+    transition:width .25s ease
+  }
+  .strength-label{font-weight:700; min-width:70px}
+
+  /* output */
+  #accountsContainer{
+    white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    padding:12px; border:1px dashed var(--border); border-radius:12px; background:transparent; min-height:160px; max-height:340px; overflow:auto
+  }
+
+  /* switch */
+  .switch{
+    display:inline-flex; align-items:center; gap:10px; font-weight:700; cursor:pointer; user-select:none
+  }
+  .switch input{display:none}
+  .track{
+    width:48px;height:28px;background:#c9d2e0;border-radius:999px;padding:3px;display:inline-block;transition:background .2s
+  }
+  .thumb{
+    width:22px;height:22px;background:white;border-radius:999px;display:block;transition:transform .2s
+  }
+  .switch input:checked + .track{background:var(--primary)}
+  .switch input:checked + .track .thumb{transform:translateX(20px)}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px}
+  .tag{font-size:.8rem; padding:4px 8px; border:1px solid var(--border); border-radius:999px; background:transparent}
+  .hidden{display:none !important}
+  .hint{font-size:.85rem; color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="toolbar" style="justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div>
+        <label class="switch" title="Toggle dark mode">
+          <input id="darkMode" type="checkbox" />
+          <span class="track"><span class="thumb"></span></span>
+          <span>Dark mode</span>
+        </label>
+      </div>
+      <div class="tag">Upgraded v2</div>
+    </div>
+
+    <h1>Pro Account Generator</h1>
+    <p class="sub">Generate realistic test accounts with flexible usernames, email provider selection, and export tools.</p>
+
+    <div class="grid">
+      <!-- LEFT: Controls -->
+      <div class="grid-col">
+        <div class="card">
+          <div class="row">
+            <div>
+              <label for="accountType">Account Type</label>
+              <select id="accountType">
+                <option value="email" selected>Email</option>
+                <option value="social">Social (generic)</option>
+                <option value="youtube">YouTube</option>
+                <option value="twitter">Twitter / X</option>
+                <option value="instagram">Instagram</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="github">GitHub</option>
+              </select>
+            </div>
+            <div id="emailProviderWrap">
+              <label for="emailProvider">Email Provider</label>
+              <select id="emailProvider">
+                <option value="gmail.com" selected>Gmail</option>
+                <option value="yahoo.com">Yahoo</option>
+                <option value="outlook.com">Outlook</option>
+                <option value="icloud.com">iCloud</option>
+                <option value="proton.me">Proton</option>
+                <option value="custom">Custom…</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="customDomainRow" class="row hidden">
+            <div>
+              <label for="customDomain">Custom Domain</label>
+              <input type="text" id="customDomain" placeholder="e.g. example.org" />
+              <div class="hint">Used when provider is set to “Custom…”.</div>
+            </div>
+          </div>
+
+          <details open>
+            <summary><span class="chev">▶</span> Account Details</summary>
+            <div class="panel">
+              <div class="row">
+                <div>
+                  <label for="baseName">Base Username or Name (optional)</label>
+                  <input type="text" id="baseName" placeholder="e.g. johndoe" />
+                  <div class="hint">If blank, we’ll generate adjective+noun usernames.</div>
+                </div>
+                <div>
+                  <label for="accountCount">How many?</label>
+                  <input type="number" id="accountCount" min="1" max="200" value="8" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label><input type="checkbox" id="uniqueSuffix" checked /> Ensure uniqueness with numeric suffix</label>
+                </div>
+                <div>
+                  <label><input type="checkbox" id="humanizeNames" checked /> Generate human-looking full names</label>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <details open>
+            <summary><span class="chev">▶</span> Password Options</summary>
+            <div class="panel">
+              <div class="row">
+                <div>
+                  <label for="passwordLength">Password Length</label>
+                  <input type="number" id="passwordLength" min="6" max="64" value="12" />
+                </div>
+                <div>
+                  <label>&nbsp;</label>
+                  <div class="strength" aria-label="Password strength meter">
+                    <div id="strengthBar"></div>
+                  </div>
+                  <div class="row" style="align-items:center; margin-top:6px;">
+                    <span class="strength-label" id="strengthLabel">Weak</span>
+                    <span class="muted" id="entropyLabel">0 bits</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <label><input type="checkbox" id="complexLowercase" checked /> Lowercase</label>
+                <label><input type="checkbox" id="complexUppercase" checked /> Uppercase</label>
+                <label><input type="checkbox" id="complexNumbers" checked /> Numbers</label>
+                <label><input type="checkbox" id="complexSymbols" /> Symbols</label>
+                <label><input type="checkbox" id="avoidAmbiguous" /> Avoid ambiguous (0/O, 1/l/I)</label>
+              </div>
+            </div>
+          </details>
+
+          <details>
+            <summary><span class="chev">▶</span> Extras</summary>
+            <div class="panel">
+              <div class="row">
+                <label><input type="checkbox" id="includePhone" /> Include phone number</label>
+                <label><input type="checkbox" id="includeDOB" /> Include date of birth</label>
+              </div>
+              <div class="row">
+                <div>
+                  <label for="countrySelect">Phone Country</label>
+                  <select id="countrySelect">
+                    <option value="US" selected>United States (+1)</option>
+                    <option value="UK">United Kingdom (+44)</option>
+                    <option value="DE">Germany (+49)</option>
+                    <option value="FR">France (+33)</option>
+                    <option value="IN">India (+91)</option>
+                    <option value="JP">Japan (+81)</option>
+                    <option value="AU">Australia (+61)</option>
+                  </select>
+                </div>
+                <div class="row" style="gap:8px">
+                  <div>
+                    <label for="minAge">Min Age</label>
+                    <input type="number" id="minAge" min="13" max="120" value="18" />
+                  </div>
+                  <div>
+                    <label for="maxAge">Max Age</label>
+                    <input type="number" id="maxAge" min="13" max="120" value="65" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <div class="row" style="margin-top:14px">
+            <button id="generateBtn">Generate Accounts</button>
+            <button id="copyBtn" class="secondary" disabled>Copy All</button>
+            <button id="exportCSVBtn" class="secondary" disabled>Export CSV</button>
+            <button id="exportJSONBtn" class="secondary" disabled>Export JSON</button>
+          </div>
+          <div class="hint" style="margin-top:8px">Tip: CSV headers are <em>username, fullName, password, phone, dob, platform</em>.</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Output -->
+      <div class="grid-col">
+        <div class="card">
+          <label for="accountsContainer" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Generated Accounts</span>
+            <span class="muted" id="countBadge">0 items</span>
+          </label>
+          <div id="accountsContainer" aria-live="polite" aria-label="Generated accounts"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---------- Dark mode ----------
+  const darkModeToggle = document.getElementById('darkMode');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if(prefersDark) { document.body.classList.add('dark'); darkModeToggle.checked = true; }
+  darkModeToggle.addEventListener('change', () => document.body.classList.toggle('dark'));
+
+  // ---------- Elements ----------
+  const accountTypeEl = document.getElementById('accountType');
+  const emailProviderWrap = document.getElementById('emailProviderWrap');
+  const emailProviderEl = document.getElementById('emailProvider');
+  const customDomainRow = document.getElementById('customDomainRow');
+  const customDomainEl = document.getElementById('customDomain');
+
+  const baseNameEl = document.getElementById('baseName');
+  const accountCountEl = document.getElementById('accountCount');
+  const uniqueSuffixEl = document.getElementById('uniqueSuffix');
+  const humanizeNamesEl = document.getElementById('humanizeNames');
+
+  const passwordLengthEl = document.getElementById('passwordLength');
+  const strengthBar = document.getElementById('strengthBar');
+  const strengthLabel = document.getElementById('strengthLabel');
+  const entropyLabel = document.getElementById('entropyLabel');
+
+  const complexLowercaseEl = document.getElementById('complexLowercase');
+  const complexUppercaseEl = document.getElementById('complexUppercase');
+  const complexNumbersEl = document.getElementById('complexNumbers');
+  const complexSymbolsEl = document.getElementById('complexSymbols');
+  const avoidAmbiguousEl = document.getElementById('avoidAmbiguous');
+
+  const includePhoneEl = document.getElementById('includePhone');
+  const includeDOBEl = document.getElementById('includeDOB');
+  const countrySelectEl = document.getElementById('countrySelect');
+  const minAgeEl = document.getElementById('minAge');
+  const maxAgeEl = document.getElementById('maxAge');
+
+  const generateBtn = document.getElementById('generateBtn');
+  const accountsContainer = document.getElementById('accountsContainer');
+  const copyBtn = document.getElementById('copyBtn');
+  const exportCSVBtn = document.getElementById('exportCSVBtn');
+  const exportJSONBtn = document.getElementById('exportJSONBtn');
+  const countBadge = document.getElementById('countBadge');
+
+  // ---------- Utils ----------
+  const ADJECTIVES = ["swift","lucky","quiet","bold","clever","sunny","brave","calm","dapper","eager","fuzzy","gentle","happy","icy","jolly","kind","lively","merry","neat","odd","proud","quick","royal","sharp","tidy","urban","vivid","witty","young","zesty"];
+  const NOUNS = ["otter","falcon","maple","pixel","ember","canyon","harbor","meadow","river","comet","cloud","willow","spruce","nebula","summit","valley","aurora","pebble","raven","oak","breeze","echo","glacier","ledger","quartz","signal","vertex","voyager","whisper","zephyr"];
+  const FIRST = ["Alex","Bailey","Casey","Devin","Emerson","Frankie","Grace","Hayden","Indie","Jordan","Kai","Logan","Morgan","Noah","Owen","Parker","Quinn","Riley","Sawyer","Taylor","Uma","Val","Winter","Xander","Yael","Zoe"];
+  const LAST  = ["Adams","Baker","Carter","Dawson","Ellis","Foster","Garcia","Hughes","Iverson","Jenkins","Khan","Lopez","Miller","Nguyen","Ortiz","Patel","Quincy","Reed","Stewart","Turner","Upton","Vargas","Walker","Xu","Young","Zimmerman"];
+
+  function getRandomInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+  function sample(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function coin(){ return Math.random()<0.5; }
+
+  function sanitizeHandle(s){
+    return (s||"").toLowerCase().replace(/[^a-z0-9._-]/g,'').replace(/^[._-]+|[._-]+$/g,'').slice(0,30);
+  }
+
+  // ---------- Email provider visibility ----------
+  function syncEmailProviderUI(){
+    const isEmail = accountTypeEl.value === 'email';
+    emailProviderWrap.classList.toggle('hidden', !isEmail);
+    customDomainRow.classList.toggle('hidden', !isEmail || emailProviderEl.value !== 'custom');
+  }
+  accountTypeEl.addEventListener('change', syncEmailProviderUI);
+  emailProviderEl.addEventListener('change', syncEmailProviderUI);
+  syncEmailProviderUI();
+
+  // ---------- Password strength / entropy ----------
+  function charsetSize(){
+    let size = 0;
+    if(complexLowercaseEl.checked) size += 26;
+    if(complexUppercaseEl.checked) size += 26;
+    if(complexNumbersEl.checked)  size += 10;
+    if(complexSymbolsEl.checked)  size += 28; // approx
+    if(avoidAmbiguousEl.checked){ // subtract a few characters if chosen
+      if(complexUppercaseEl.checked) size -= 2; // O, I
+      if(complexLowercaseEl.checked) size -= 1; // l
+      if(complexNumbersEl.checked)  size -= 2; // 0,1
+    }
+    return Math.max(size, 1);
+  }
+  function log2(x){ return Math.log(x)/Math.log(2); }
+  function estimateEntropy(){
+    const L = parseInt(passwordLengthEl.value,10) || 0;
+    const pool = charsetSize();
+    const bits = Math.max(0, Math.round(L * log2(pool)));
+    return bits;
+  }
+  function strengthFromBits(bits){
+    if(bits < 45) return {label:'Weak', pct:25, color:'var(--bad)'};
+    if(bits < 60) return {label:'Fair', pct:50, color:'var(--warn)'};
+    if(bits < 75) return {label:'Good', pct:75, color:'var(--ok)'};
+    return {label:'Strong', pct:100, color:'var(--ok)'};
+  }
+  function updateStrengthUI(){
+    const bits = estimateEntropy();
+    const s = strengthFromBits(bits);
+    strengthBar.style.width = s.pct + '%';
+    strengthBar.style.background = s.color;
+    strengthLabel.textContent = s.label;
+    entropyLabel.textContent = bits + ' bits';
+  }
+  [passwordLengthEl, complexLowercaseEl, complexUppercaseEl, complexNumbersEl, complexSymbolsEl, avoidAmbiguousEl]
+    .forEach(el => el.addEventListener('input', updateStrengthUI));
+  updateStrengthUI();
+
+  // ---------- Password generator ----------
+  function generatePassword(length){
+    const sets = [];
+    let lower = 'abcdefghijklmnopqrstuvwxyz';
+    let upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let nums  = '0123456789';
+    let syms  = '!@#$%^&*()-_=+[]{}|;:,.<>?';
+    if(avoidAmbiguousEl.checked){
+      lower = lower.replace(/[l]/g,''); upper = upper.replace(/[OI]/g,''); nums = nums.replace(/[01]/g,'');
+    }
+    if(complexLowercaseEl.checked) sets.push(lower);
+    if(complexUppercaseEl.checked) sets.push(upper);
+    if(complexNumbersEl.checked)  sets.push(nums);
+    if(complexSymbolsEl.checked)  sets.push(syms);
+    if(!sets.length) return '';
+
+    const all = sets.join('');
+    // guarantee one from each set
+    const result = [];
+    for(const s of sets) result.push(s.charAt(Math.floor(Math.random()*s.length)));
+    while(result.length < length) result.push(all.charAt(Math.floor(Math.random()*all.length)));
+    // shuffle
+    for(let i=result.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [result[i],result[j]]=[result[j],result[i]]; }
+    return result.join('');
+  }
+
+  // ---------- Names & usernames ----------
+  function fullName(i){
+    if(!humanizeNamesEl.checked) return '';
+    return `${sample(FIRST)} ${sample(LAST)}`;
+  }
+  function randomUserBase(){
+    // adjective + noun pattern, sometimes with dot/underscore
+    const sep = sample(['','.','_','-']);
+    return sanitizeHandle(`${sample(ADJECTIVES)}${sep}${sample(NOUNS)}`);
+  }
+  function makeUsername(base, idx){
+    let handle = base ? sanitizeHandle(base) : randomUserBase();
+    if(uniqueSuffixEl.checked){
+      const n = getRandomInt(2, 9999);
+      const sep = /[\.\-_]$/.test(handle) ? '' : sample(['', '.', '_']);
+      handle = handle + sep + n;
+    }else if(!base){
+      // If no unique suffix and base was auto, still add small variety
+      handle = handle + getRandomInt(2, 99);
+    }
+    return handle;
+  }
+
+  // ---------- Email address ----------
+  function makeEmail(username){
+    let domain = emailProviderEl.value;
+    if(domain === 'custom'){
+      domain = (customDomainEl.value || 'example.com').replace(/^@/,'').trim();
+    }
+    // Gmail ignores dots in local-part, but we’ll allow them for realism
+    const local = username.toLowerCase().replace(/[^a-z0-9._-]/g,'');
+    return `${local}@${domain}`;
+  }
+
+  // ---------- DOB ----------
+  function formatDateISO(d){ return d.toISOString().slice(0,10); }
+  function randomDOB(minAge, maxAge){
+    const now = new Date();
+    const latest = new Date(now.getFullYear()-minAge, now.getMonth(), now.getDate());
+    const earliest = new Date(now.getFullYear()-maxAge, now.getMonth(), now.getDate());
+    const t = getRandomInt(earliest.getTime(), latest.getTime());
+    return new Date(t);
+  }
+
+  // ---------- Phone numbers (lightly realistic) ----------
+  function phoneUS(){
+    // NANP: NXX-NXX-XXXX where N=2–9, X=0–9
+    const N = ()=> getRandomInt(2,9);
+    const X = ()=> getRandomInt(0,9);
+    const area = `${N()}${X()}${X()}`;
+    const exc  = `${N()}${X()}${X()}`;
+    const line = `${X()}${X()}${X()}${X()}`;
+    return `+1 (${area}) ${exc}-${line}`;
+  }
+  function phoneUK(){ return `+44 7${getRandomInt(1000,9999)} ${getRandomInt(100000,999999)}`; }
+  function phoneDE(){ return `+49 15${getRandomInt(0,9)} ${getRandomInt(1000000,9999999)}`; }
+  function phoneFR(){ return `+33 6 ${getRandomInt(10,99)} ${getRandomInt(10,99)} ${getRandomInt(10,99)} ${getRandomInt(10,99)}`; }
+  function phoneIN(){ return `+91 ${getRandomInt(6,9)}${getRandomInt(100000000,999999999)}`; }
+  function phoneJP(){ return `+81 90-${getRandomInt(1000,9999)}-${getRandomInt(1000,9999)}`; }
+  function phoneAU(){ return `+61 4${getRandomInt(100,999)} ${getRandomInt(100,999)} ${getRandomInt(100,999)}`; }
+  function generatePhone(code){
+    switch(code){
+      case 'US': return phoneUS();
+      case 'UK': return phoneUK();
+      case 'DE': return phoneDE();
+      case 'FR': return phoneFR();
+      case 'IN': return phoneIN();
+      case 'JP': return phoneJP();
+      case 'AU': return phoneAU();
+      default: return '+000000000';
+    }
+  }
+
+  // ---------- Platform domains for non-email ----------
+  const platformDomains = {
+    social: ['socialmedia.com','social.example'],
+    youtube: ['youtube.com'],
+    twitter: ['twitter.com'],
+    instagram: ['instagram.com'],
+    linkedin: ['linkedin.com'],
+    github: ['github.com'],
+  };
+
+  // ---------- Generation main ----------
+  let generatedAccounts = [];
+  function validateInputs(){
+    const count = parseInt(accountCountEl.value,10);
+    if(!(count>=1 && count<=200)) return 'Account count must be 1–200.';
+    const L = parseInt(passwordLengthEl.value,10);
+    if(!(L>=6 && L<=64)) return 'Password length must be 6–64.';
+    if(!(complexLowercaseEl.checked || complexUppercaseEl.checked || complexNumbersEl.checked || complexSymbolsEl.checked)){
+      return 'Select at least one password character set.';
+    }
+    if(accountTypeEl.value==='email' && emailProviderEl.value==='custom'){
+      const d = (customDomainEl.value||'').trim();
+      if(!d) return 'Please enter a custom domain (e.g., example.org).';
+      if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d)) return 'Custom domain looks invalid.';
+    }
+    const minA = parseInt(minAgeEl.value,10), maxA = parseInt(maxAgeEl.value,10);
+    if(minA>maxA) return 'Min age cannot exceed max age.';
+    return '';
+  }
+
+  function generate(){
+    const error = validateInputs();
+    if(error){ alert(error); return; }
+
+    const type = accountTypeEl.value;
+    const count = parseInt(accountCountEl.value,10);
+    const L = parseInt(passwordLengthEl.value,10);
+    const includePhone = includePhoneEl.checked;
+    const includeDOB = includeDOBEl.checked;
+    const country = countrySelectEl.value;
+    const minA = parseInt(minAgeEl.value,10), maxA = parseInt(maxAgeEl.value,10);
+
+    generatedAccounts = [];
+    accountsContainer.textContent = 'Generating…';
+
+    let out = [];
+    for(let i=0;i<count;i++){
+      const base = baseNameEl.value.trim();
+      const username = makeUsername(base, i);
+      const password = generatePassword(L);
+      const full = fullName(i);
+
+      let identifier;
+      if(type==='email'){
+        identifier = makeEmail(username);
+      }else{
+        const domain = sample(platformDomains[type] || ['example.com']);
+        identifier = username; // show handle only
+      }
+
+      const phone = includePhone ? generatePhone(country) : '';
+      const dob = includeDOB ? formatDateISO(randomDOB(minA, maxA)) : '';
+
+      const account = { username: identifier, fullName: full, password, phone, dob, platform: type };
+      generatedAccounts.push(account);
+
+      let chunk = `Username: ${identifier}`;
+      if(full) chunk += `\nFull Name: ${full}`;
+      chunk += `\nPassword: ${password}`;
+      if(includePhone) chunk += `\nPhone: ${phone}`;
+      if(includeDOB) chunk += `\nDOB: ${dob}`;
+      chunk += `\nPlatform: ${type}\n`;
+      out.push(chunk);
+    }
+
+    accountsContainer.textContent = out.join('\n');
+    copyBtn.disabled = false;
+    exportCSVBtn.disabled = false;
+    exportJSONBtn.disabled = false;
+    countBadge.textContent = `${generatedAccounts.length} items`;
+  }
+
+  generateBtn.addEventListener('click', generate);
+
+  // ---------- Copy / Export ----------
+  copyBtn.addEventListener('click', () => {
+    if(!generatedAccounts.length) return;
+    navigator.clipboard.writeText(accountsContainer.textContent)
+      .then(()=> toast('Copied to clipboard'))
+      .catch(()=> alert('Copy failed. Please copy manually.'));
+  });
+
+  function toCSV(rows){
+    const keys = ['username','fullName','password','phone','dob','platform'];
+    const header = keys.join(',');
+    const data = rows.map(r => keys.map(k => `"${String(r[k]||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    return header + '\n' + data;
+  }
+  exportCSVBtn.addEventListener('click', ()=>{
+    if(!generatedAccounts.length) return;
+    const csv = toCSV(generatedAccounts);
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'generated_accounts.csv';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  exportJSONBtn.addEventListener('click', ()=>{
+    if(!generatedAccounts.length) return;
+    const jsonStr = JSON.stringify(generatedAccounts, null, 2);
+    const blob = new Blob([jsonStr], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'generated_accounts.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  // ---------- Tiny toast ----------
+  function toast(msg){
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.position='fixed'; el.style.left='50%'; el.style.bottom='24px';
+    el.style.transform='translateX(-50%)';
+    el.style.background='var(--card)'; el.style.color='var(--fg)';
+    el.style.border='1px solid var(--border)'; el.style.padding='10px 14px';
+    el.style.borderRadius='10px'; el.style.boxShadow='0 8px 24px rgba(0,0,0,.12)';
+    el.style.zIndex='9999';
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .4s'; }, 1200);
+    setTimeout(()=> el.remove(), 1700);
+  }
+</script>
+</body>
+</html>
+```

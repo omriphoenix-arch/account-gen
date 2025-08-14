@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pro Account Generator — Full Release</title>
+<meta name="description" content="Generate realistic test accounts with advanced options, dark mode, presets, preview, and exports." />
+<style>
+/* ==== THEME (clean + dark mode) ==== */
+:root{
+  --bg:#f6f7fb; --fg:#1f2937; --muted:#6b7280; --card:#ffffff; --border:#e5e7eb;
+  --primary:#2563eb; --primary-600:#1e4fd8; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444;
+  --mono: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  --radius:14px;
+}
+.dark{
+  --bg:#0f1117; --fg:#e5e7eb; --muted:#94a3b8; --card:#151922; --border:#2b3240;
+  --primary:#60a5fa; --primary-600:#3b82f6; --ok:#22c55e; --warn:#fbbf24; --bad:#f87171;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+}
+.container{max-width:1200px;margin:0 auto;padding:28px}
+h1{margin:0 0 6px;font-size:28px}
+.sub{margin:0 0 18px;color:var(--muted)}
+
+.grid{display:grid;gap:16px}
+@media(min-width:1000px){.grid{grid-template-columns:1.2fr 1fr}}
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px;
+  box-shadow:0 12px 30px rgba(0,0,0,.06)
+}
+.row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1}
+
+label{display:block;font-weight:700;margin:.35rem 0 .35rem}
+input[type=text],input[type=number],input[type=email],select,textarea{
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:transparent; color:inherit; resize:vertical
+}
+textarea{min-height:68px}
+input[type=checkbox]{transform:translateY(2px)}
+button{
+  appearance:none; border:1px solid var(--border); background:var(--primary); color:#fff;
+  padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700
+}
+button.ghost{background:transparent;color:var(--fg)}
+button.outline{background:transparent;border-color:var(--primary);color:var(--primary)}
+button:disabled{opacity:.6;cursor:not-allowed}
+.small{font-size:.86rem}
+.muted{color:var(--muted)}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid var(--border);font-size:.78rem}
+
+.details{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card)}
+.details summary{
+  padding:12px 14px; font-weight:800; cursor:pointer; user-select:none; list-style:none; display:flex; align-items:center; gap:8px
+}
+.details summary::-webkit-details-marker{display:none}
+.panel{padding:10px 14px 14px}
+
+/* Strength meter */
+.meter{height:10px;background:#d7dbe3;border-radius:999px;overflow:hidden}
+.meter>div{height:100%;width:0;transition:width .25s}
+.mlabel{font-weight:800;min-width:70px}
+
+/* Preview table */
+.table-wrap{overflow:auto;max-height:420px;border:1px dashed var(--border);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{position:sticky;top:0;background:var(--card);z-index:1}
+.code{font-family:var(--mono)}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.75rem;padding:3px 8px;border:1px solid var(--border);border-radius:999px}
+
+/* Toolbar */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
+.switch{display:inline-flex;align-items:center;gap:10px;font-weight:800;cursor:pointer}
+.switch input{display:none}
+.track{width:48px;height:28px;background:#cbd5e1;border-radius:999px;padding:3px;display:inline-block;transition:background .2s}
+.thumb{width:22px;height:22px;background:#fff;border-radius:999px;display:block;transition:transform .2s}
+.switch input:checked+.track{background:var(--primary)}
+.switch input:checked+.track .thumb{transform:translateX(20px)}
+
+/* Pills */
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;cursor:pointer}
+.pill.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card);color:var(--fg);
+border:1px solid var(--border);padding:10px 14px;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.15);z-index:9999}
+.hide{display:none}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Top Bar -->
+  <div class="toolbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge">Full Release</span>
+      <span class="muted small">All-in-one page · copy & paste to use</span>
+    </div>
+    <label class="switch" title="Toggle dark mode">
+      <input id="darkToggle" type="checkbox" />
+      <span class="track"><span class="thumb"></span></span>
+      <span>Dark mode</span>
+    </label>
+  </div>
+
+  <h1>Pro Account Generator</h1>
+  <p class="sub">Generate realistic accounts with advanced options: patterns, providers, DOB ranges, phones, addresses, security Q&As, MFA, avatars, presets, and more.</p>
+
+  <div class="grid">
+    <!-- Left: Controls -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="accountType">Account Type</label>
+          <select id="accountType">
+            <option value="email" selected>Email</option>
+            <option value="social">Social (generic)</option>
+            <option value="youtube">YouTube</option>
+            <option value="twitter">Twitter / X</option>
+            <option value="instagram">Instagram</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="github">GitHub</option>
+          </select>
+        </div>
+        <div id="emailProviderWrap">
+          <label for="emailProvider">Email Provider</label>
+          <select id="emailProvider">
+            <option value="gmail.com" selected>Gmail</option>
+            <option value="yahoo.com">Yahoo</option>
+            <option value="outlook.com">Outlook</option>
+            <option value="icloud.com">iCloud</option>
+            <option value="proton.me">Proton</option>
+            <option value="custom">Custom…</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row hidden" id="customDomainRow">
+        <div>
+          <label for="customDomain">Custom Domain</label>
+          <input type="text" id="customDomain" placeholder="e.g. mycompany.org" />
+          <div class="muted small">Used when provider = Custom…</div>
+        </div>
+        <div>
+          <label for="plusAlias">Plus-addressing</label>
+          <input type="text" id="plusAlias" placeholder="optional: label for +alias" />
+          <div class="muted small">Applies to Gmail/Proton/etc if set</div>
+        </div>
+      </div>
+
+      <details class="details" open>
+        <summary>▶ Username & Identity</summary>
+        <div class="panel">
+          <div class="row">
+            <div>
+              <label for="usernamePattern">Username Pattern</label>
+              <select id="usernamePattern">
+                <option value="nameNum">{name}{number}</option>
+                <option value="adjNounNum">{adjective}{noun}{number}</option>
+                <option value="nameYear">{name}.{year}</option>
+                <option value="wordNum">{random_word}_{number}</option>
+                <option value="initialsNum">{initials}{number}</option>
+                <option value="uuidShort">short-uuid</option>
+              </select>
+            </div>
+            <div>
+              <label for="baseName">Base Name (optional)</label>
+              <input type="text" id="baseName" placeholder="If empty, uses random words" />
+            </div>
+            <div>
+              <label for="count">How many?</label>
+              <input type="number" id="count" min="1" max="1000" value="20" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label><input type="checkbox" id="uniqueSuffix" checked /> Ensure uniqueness (numeric)</label>
+            </div>
+            <div>
+              <label><input type="checkbox" id="generateFullNames" checked /> Generate human full names</label>
+            </div>
+            <div>
+              <label for="gender">Name Style</label>
+              <select id="gender">
+                <option value="neutral" selected>Neutral</option>
+                <option value="female">Feminine</option>
+                <option value="male">Masculine</option>
+                <option value="mix">Mixed</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="locale">Locale</label>
+              <select id="locale">
+                <option value="US" selected>United States</option>
+                <option value="UK">United Kingdom</option>
+                <option value="DE">Germany</option>
+                <option value="FR">France</option>
+                <option value="IN">India</option>
+                <option value="JP">Japan</option>
+                <option value="AU">Australia</option>
+                <option value="CA">Canada</option>
+              </select>
+            </div>
+            <div>
+              <label><input type="checkbox" id="generateAvatars" checked /> Generate avatar (SVG initials)</label>
+            </div>
+            <div>
+              <label><input type="checkbox" id="includeBio" /> Include short bio</label>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="details" open>
+        <summary>▶ Passwords, MFA & Security</summary>
+        <div class="panel">
+          <div class="row">
+            <div>
+              <label for="passLen">Password Length</label>
+              <input type="number" id="passLen" min="6" max="64" value="12" />
+              <div class="meter" style="margin-top:6px"><div id="meterBar"></div></div>
+              <div class="row" style="align-items:center;margin-top:6px">
+                <span class="mlabel" id="meterLabel">Weak</span>
+                <span class="muted small" id="entropyLabel">0 bits</span>
+              </div>
+            </div>
+            <div>
+              <label>Password Mode</label>
+              <div class="pills" id="passMode">
+                <div class="pill active" data-mode="random">Random</div>
+                <div class="pill" data-mode="pronounce">Pronounceable</div>
+                <div class="pill" data-mode="words">3 Words + digits</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label><input type="checkbox" id="cLower" checked /> Lowercase</label>
+            <label><input type="checkbox" id="cUpper" checked /> Uppercase</label>
+            <label><input type="checkbox" id="cNums" checked /> Numbers</label>
+            <label><input type="checkbox" id="cSyms" /> Symbols</label>
+            <label><input type="checkbox" id="avoidAmbig" /> Avoid ambiguous (0/O,1/l/I)</label>
+            <label><input type="checkbox" id="maskPasswords" /> Mask in preview</label>
+          </div>
+
+          <div class="row">
+            <label><input type="checkbox" id="includeMFA" /> Include MFA secret (base32)</label>
+            <label><input type="checkbox" id="includeRecovery" /> Include recovery codes (x10)</label>
+            <label><input type="checkbox" id="includeSecQA" /> Include security Q&As</label>
+          </div>
+        </div>
+      </details>
+
+      <details class="details">
+        <summary>▶ Contact & Extras</summary>
+        <div class="panel">
+          <div class="row">
+            <label><input type="checkbox" id="includePhone" /> Phone number</label>
+            <label><input type="checkbox" id="includeDOB" /> Date of birth</label>
+            <label><input type="checkbox" id="includeAddress" /> Postal address</label>
+            <label><input type="checkbox" id="includeWebsite" /> Website URL</label>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="phoneCountry">Phone Country</label>
+              <select id="phoneCountry">
+                <option value="US" selected>United States (+1)</option>
+                <option value="UK">United Kingdom (+44)</option>
+                <option value="DE">Germany (+49)</option>
+                <option value="FR">France (+33)</option>
+                <option value="IN">India (+91)</option>
+                <option value="JP">Japan (+81)</option>
+                <option value="AU">Australia (+61)</option>
+                <option value="CA">Canada (+1)</option>
+              </select>
+            </div>
+            <div>
+              <label>Age range</label>
+              <div class="row">
+                <input type="number" id="minAge" min="13" max="120" value="18" />
+                <input type="number" id="maxAge" min="13" max="120" value="65" />
+              </div>
+              <div class="muted small">Used when DOB is included</div>
+            </div>
+            <div>
+              <label for="recordsTag">Record tag (optional)</label>
+              <input type="text" id="recordsTag" placeholder="e.g. beta-campaign" />
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="details">
+        <summary>▶ Presets & Data</summary>
+        <div class="panel">
+          <div class="row">
+            <div>
+              <label for="presetName">Preset name</label>
+              <input type="text" id="presetName" placeholder="e.g. Email-heavy + MFA" />
+            </div>
+            <div class="actions">
+              <button class="outline" id="savePresetBtn">Save Preset</button>
+              <button class="ghost" id="loadPresetBtn">Load Preset</button>
+              <button class="ghost" id="clearPresetsBtn">Clear Presets</button>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="importArea">Import accounts (JSON)</label>
+              <textarea id="importArea" placeholder='[{"username":"...","password":"..."}]'></textarea>
+            </div>
+            <div class="actions" style="align-items:flex-end">
+              <button class="outline" id="importBtn">Append Imported</button>
+              <button class="ghost" id="clearDataBtn">Clear Table</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="row" style="margin-top:14px">
+        <button id="generateBtn">Generate</button>
+        <button class="ghost" id="copyAllBtn" disabled>Copy All</button>
+        <button class="ghost" id="exportCSVBtn" disabled>Export CSV</button>
+        <button class="ghost" id="exportJSONBtn" disabled>Export JSON</button>
+        <button class="ghost" id="exportBothBtn" disabled>Export Both</button>
+      </div>
+      <div class="muted small" style="margin-top:6px">Exports include all selected fields. CSV headers are standardized.</div>
+    </div>
+
+    <!-- Right: Preview -->
+    <div class="card">
+      <div class="row" style="align-items:center">
+        <div><strong>Preview</strong> <span class="badge" id="countBadge">0 items</span></div>
+        <div class="row" style="justify-content:flex-end">
+          <input type="text" id="filterInput" placeholder="Filter… (username / name / tag)" />
+        </div>
+      </div>
+      <div class="table-wrap" id="tableWrap">
+        <table id="previewTable">
+          <thead>
+            <tr>
+              <th data-sort="username">Username ⬍</th>
+              <th data-sort="fullName">Full name ⬍</th>
+              <th>Password</th>
+              <th data-sort="dob">DOB ⬍</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>MFA</th>
+              <th>Recovery</th>
+              <th>Q&A</th>
+              <th>Avatar</th>
+              <th>Platform</th>
+              <th>Tag</th>
+              <th style="min-width:170px">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="muted small">Tip: click column headers to sort; click a row’s “Copy” to copy that account as JSON.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hide"></div>
+
+<script>
+/* ===========================
+   UTILITIES & DATA
+=========================== */
+const qs = s => document.querySelector(s);
+const qsa = s => Array.from(document.querySelectorAll(s));
+function toast(msg, ms=1600){
+  const t = qs('#toast'); t.textContent = msg; t.classList.remove('hide');
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .4s'; }, ms-400);
+  setTimeout(()=>{ t.classList.add('hide'); t.style.opacity=''; t.style.transition=''; }, ms);
+}
+function sample(a){ return a[Math.floor(Math.random()*a.length)] }
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min }
+function clamp(n,min,max){ return Math.min(Math.max(n,min),max) }
+function uuidShort(){ return Math.random().toString(36).slice(2,10) }
+
+/* Name banks (lean but varied) */
+const FIRST_NEUTRAL = ["Alex","Avery","Casey","Devin","Emery","Hayden","Jordan","Kai","Logan","Morgan","Noah","Parker","Quinn","Riley","Rowan","Taylor","Zoe","Reese","Indie","Skyler"];
+const FIRST_F = ["Amelia","Chloe","Ella","Grace","Hannah","Isla","Lily","Mia","Nora","Olivia","Ruby","Sofia","Zara","Ava","Maya","Luna"];
+const FIRST_M = ["Adam","Benjamin","Caleb","Daniel","Ethan","Finn","Henry","Isaac","Jack","Liam","Leo","Miles","Noel","Owen","Ryan","Theo"];
+const LAST = ["Adams","Baker","Carter","Diaz","Ellis","Foster","Garcia","Hughes","Ibrahim","Jensen","Khan","Lopez","Miller","Nguyen","Ortiz","Patel","Reed","Singh","Turner","Walker","Young","Zimmerman"];
+const ADJ = ["swift","calm","brave","clever","sunny","fuzzy","merry","royal","tidy","vivid","witty","zesty","rad","cosmic","atomic","lucky","ember","arc","pixel","quantum"];
+const NOUN = ["otter","falcon","willow","comet","harbor","meadow","river","quartz","summit","vertex","voyager","whisper","nebula","spruce","raven","oak","canyon","pulse","echo","breeze"];
+const WORDS = ["alpha","nova","flux","vibe","delta","orbit","ripple","zen","nimbus","solace","ember","lumen","kilo","mosaic","saga"];
+
+/* Random bios + websites */
+const BIOS = [
+  "Coffee-fueled builder. Always shipping.",
+  "Design • Code • Repeat.",
+  "Exploring data, telling stories.",
+  "Weekend hiker, weekday debugger.",
+  "Minimalist. Maker. Music on loop."
+];
+const DOMAINS = ["example.com","acme.io","contoso.dev","myfolio.app","coolsite.net"];
+
+/* Security Qs */
+const QUESTIONS = [
+  "What was the name of your first pet?",
+  "What city were you born in?",
+  "What is your mother's maiden name?",
+  "What is the name of your first school?",
+  "What was your childhood nickname?"
+];
+
+/* Address banks (very light; synthetic) */
+const CITIES = {
+  US:[["New York","NY"],["Seattle","WA"],["Austin","TX"],["Miami","FL"],["Denver","CO"]],
+  UK:[["London",""],["Manchester",""],["Bristol",""],["Leeds",""],["Edinburgh",""]],
+  DE:[["Berlin",""],["Hamburg",""],["Munich",""],["Cologne",""],["Frankfurt",""]],
+  FR:[["Paris",""],["Lyon",""],["Marseille",""],["Toulouse",""],["Nice",""]],
+  IN:[["Mumbai","MH"],["Delhi","DL"],["Bengaluru","KA"],["Pune","MH"],["Chennai","TN"]],
+  JP:[["Tokyo",""],["Osaka",""],["Kyoto",""],["Nagoya",""],["Sapporo",""]],
+  AU:[["Sydney","NSW"],["Melbourne","VIC"],["Brisbane","QLD"],["Perth","WA"],["Adelaide","SA"]],
+  CA:[["Toronto","ON"],["Vancouver","BC"],["Montreal","QC"],["Calgary","AB"],["Ottawa","ON"]],
+};
+function randomStreet(){ return `${randInt(100,9999)} ${sample(["Main","Oak","Pine","Cedar","Maple","Elm","Willow","Lake"])} ${sample(["St","Ave","Rd","Dr","Ln"])}` }
+
+/* ======== Dark Mode ======== */
+const darkToggle = qs('#darkToggle');
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.body.classList.add('dark'); darkToggle.checked = true;
+}
+darkToggle.addEventListener('change',()=>document.body.classList.toggle('dark'));
+
+/* ======== Elements ======== */
+const accountTypeEl = qs('#accountType');
+const emailProviderWrap = qs('#emailProviderWrap');
+const emailProviderEl = qs('#emailProvider');
+const customDomainRow = qs('#customDomainRow');
+const customDomainEl = qs('#customDomain');
+const plusAliasEl = qs('#plusAlias');
+
+const usernamePatternEl = qs('#usernamePattern');
+const baseNameEl = qs('#baseName');
+const countEl = qs('#count');
+const uniqueSuffixEl = qs('#uniqueSuffix');
+const generateFullNamesEl = qs('#generateFullNames');
+const genderEl = qs('#gender');
+const localeEl = qs('#locale');
+const generateAvatarsEl = qs('#generateAvatars');
+const includeBioEl = qs('#includeBio');
+
+const passLenEl = qs('#passLen');
+const meterBar = qs('#meterBar');
+const meterLabel = qs('#meterLabel');
+const entropyLabel = qs('#entropyLabel');
+const passModePills = qs('#passMode');
+const cLowerEl = qs('#cLower');
+const cUpperEl = qs('#cUpper');
+const cNumsEl = qs('#cNums');
+const cSymsEl = qs('#cSyms');
+const avoidAmbigEl = qs('#avoidAmbig');
+const maskPasswordsEl = qs('#maskPasswords');
+
+const includeMFAEl = qs('#includeMFA');
+const includeRecoveryEl = qs('#includeRecovery');
+const includeSecQAEl = qs('#includeSecQA');
+
+const includePhoneEl = qs('#includePhone');
+const includeDOBEl = qs('#includeDOB');
+const includeAddressEl = qs('#includeAddress');
+const includeWebsiteEl = qs('#includeWebsite');
+const phoneCountryEl = qs('#phoneCountry');
+const minAgeEl = qs('#minAge');
+const maxAgeEl = qs('#maxAge');
+const recordsTagEl = qs('#recordsTag');
+
+const presetNameEl = qs('#presetName');
+const savePresetBtn = qs('#savePresetBtn');
+const loadPresetBtn = qs('#loadPresetBtn');
+const clearPresetsBtn = qs('#clearPresetsBtn');
+const importAreaEl = qs('#importArea');
+const importBtn = qs('#importBtn');
+const clearDataBtn = qs('#clearDataBtn');
+
+const generateBtn = qs('#generateBtn');
+const copyAllBtn = qs('#copyAllBtn');
+const exportCSVBtn = qs('#exportCSVBtn');
+const exportJSONBtn = qs('#exportJSONBtn');
+const exportBothBtn = qs('#exportBothBtn');
+
+const countBadge = qs('#countBadge');
+const filterInput = qs('#filterInput');
+const previewTable = qs('#previewTable');
+const tbody = previewTable.querySelector('tbody');
+
+/* ======== Provider UI ======== */
+function syncProviderUI(){
+  const isEmail = accountTypeEl.value === 'email';
+  emailProviderWrap.classList.toggle('hidden', !isEmail);
+  customDomainRow.classList.toggle('hidden', !isEmail || emailProviderEl.value !== 'custom');
+}
+accountTypeEl.addEventListener('change', syncProviderUI);
+emailProviderEl.addEventListener('change', syncProviderUI);
+syncProviderUI();
+
+/* ======== Password Entropy ======== */
+function charsetSize(){
+  let s = 0;
+  if (cLowerEl.checked) s+=26;
+  if (cUpperEl.checked) s+=26;
+  if (cNumsEl.checked)  s+=10;
+  if (cSymsEl.checked)  s+=28;
+  if (avoidAmbigEl.checked){
+    if (cUpperEl.checked) s -= 2; // O,I
+    if (cLowerEl.checked) s -= 1; // l
+    if (cNumsEl.checked)  s -= 2; // 0,1
+  }
+  return Math.max(1,s);
+}
+function log2(x){ return Math.log(x)/Math.log(2) }
+function calcEntropy(len){ return Math.round(len*log2(charsetSize())) }
+function updateMeter(){
+  const bits = calcEntropy(parseInt(passLenEl.value,10) || 0);
+  let label="Weak", pct=25, col="linear-gradient(90deg,var(--bad),var(--warn),var(--ok))";
+  if (bits>=45 && bits<60){label="Fair"; pct=50}
+  else if (bits>=60 && bits<75){label="Good"; pct=75}
+  else if (bits>=75){label="Strong"; pct=100}
+  meterBar.style.width=pct+'%'; meterBar.style.background=col;
+  meterLabel.textContent=label; entropyLabel.textContent=bits+' bits';
+}
+[passLenEl,cLowerEl,cUpperEl,cNumsEl,cSymsEl,avoidAmbigEl].forEach(el=>el.addEventListener('input',updateMeter));
+updateMeter();
+
+/* ======== Password Generation Modes ======== */
+let passMode = 'random';
+passModePills.addEventListener('click', e=>{
+  const p = e.target.closest('.pill'); if(!p) return;
+  qsa('#passMode .pill').forEach(x=>x.classList.remove('active'));
+  p.classList.add('active'); passMode = p.dataset.mode;
+});
+function genRandomPassword(len){
+  let lower='abcdefghijklmnopqrstuvwxyz';
+  let upper='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let nums ='0123456789';
+  let syms ='!@#$%^&*()-_=+[]{}|;:,.<>?';
+  if (avoidAmbigEl.checked){ lower=lower.replace(/l/g,''); upper=upper.replace(/[OI]/g,''); nums=nums.replace(/[01]/g,''); }
+  const sets=[];
+  if(cLowerEl.checked) sets.push(lower);
+  if(cUpperEl.checked) sets.push(upper);
+  if(cNumsEl.checked)  sets.push(nums);
+  if(cSymsEl.checked)  sets.push(syms);
+  if(!sets.length) sets.push(lower);
+  const all=sets.join('');
+  const out=[];
+  sets.forEach(s=>out.push(s[Math.floor(Math.random()*s.length)]));
+  while(out.length<len) out.push(all[Math.floor(Math.random()*all.length)]);
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
+  return out.join('');
+}
+function genPronounceable(len){
+  const vowels='aeiou'; const cons='bcdfghjklmnpqrstvwxyz';
+  let s=''; while(s.length<len){ s += cons[randInt(0,cons.length-1)] + vowels[randInt(0,vowels.length-1)] }
+  return s.slice(0,len);
+}
+function genWordish(){
+  const words=[sample(WORDS),sample(WORDS),sample(WORDS)].join('-');
+  return words + randInt(10,99);
+}
+function generatePassword(len){
+  if (passMode==='pronounce') return genPronounceable(len);
+  if (passMode==='words') return genWordish();
+  return genRandomPassword(len);
+}
+
+/* ======== Username & Identity ======== */
+function pickFirstName(style){
+  const pools = {
+    neutral: FIRST_NEUTRAL,
+    female: FIRST_F,
+    male: FIRST_M,
+    mix: [...FIRST_F, ...FIRST_M],
+  };
+  return sample(pools[style] || FIRST_NEUTRAL);
+}
+function fullName(style){
+  return `${pickFirstName(style)} ${sample(LAST)}`;
+}
+function initialsFromName(name){
+  const parts = name.trim().split(/\s+/); return parts.map(p=>p[0]?.toUpperCase()||'').slice(0,2).join('');
+}
+function sanitizeHandle(s){ return (s||'').toLowerCase().replace(/[^a-z0-9._-]/g,'').replace(/^[._-]+|[._-]+$/g,'').slice(1,30) }
+function usernameByPattern(pattern, base, name){
+  const n = randInt(2,9999);
+  const year = randInt(2000,2025);
+  const init = initialsFromName(name||'');
+  const randWord = sample(WORDS);
+  if (pattern==='nameNum') return sanitizeHandle((base||name||'user') + n);
+  if (pattern==='adjNounNum') return sanitizeHandle(`${sample(ADJ)}${sample(NOUN)}${n}`);
+  if (pattern==='nameYear') return sanitizeHandle(`${(base||name||'user')}.${year}`);
+  if (pattern==='wordNum') return sanitizeHandle(`${randWord}_${n}`);
+  if (pattern==='initialsNum') return sanitizeHandle(`${init || 'u'}${n}`);
+  if (pattern==='uuidShort') return sanitizeHandle(uuidShort());
+  return sanitizeHandle((base||'user')+n);
+}
+
+/* ======== Email builder ======== */
+function buildEmail(local, provider, plusLabel=''){
+  let domain = provider;
+  if (provider==='custom'){
+    domain = (customDomainEl.value || 'example.com').replace(/^@/,'').trim();
+  }
+  let localPart = local.replace(/[^a-z0-9._-]/g,'').toLowerCase();
+  if (plusLabel && (provider==='gmail.com' || provider==='proton.me' || provider==='icloud.com')){
+    localPart += `+${plusLabel.replace(/[^a-z0-9_-]/gi,'')}`;
+  }
+  return `${localPart}@${domain}`;
+}
+
+/* ======== DOB, Phone, Address, Website ======== */
+function randomDOB(minAge,maxAge){
+  const now=new Date();
+  const latest = new Date(now.getFullYear()-minAge, now.getMonth(), now.getDate());
+  const earliest = new Date(now.getFullYear()-maxAge, now.getMonth(), now.getDate());
+  const t = randInt(earliest.getTime(), latest.getTime());
+  const d = new Date(t);
+  return d.toISOString().slice(0,10);
+}
+function phoneFor(country){
+  function N(){return randInt(2,9)}; function X(){return randInt(0,9)};
+  switch(country){
+    case 'US': case 'CA': return `+1 (${N()}${X()}${X()}) ${N()}${X()}${X()}-${X()}${X()}${X()}${X()}`;
+    case 'UK': return `+44 7${randInt(1000,9999)} ${randInt(100000,999999)}`;
+    case 'DE': return `+49 15${randInt(0,9)} ${randInt(1000000,9999999)}`;
+    case 'FR': return `+33 6 ${randInt(10,99)} ${randInt(10,99)} ${randInt(10,99)} ${randInt(10,99)}`;
+    case 'IN': return `+91 ${randInt(6,9)}${randInt(100000000,999999999)}`;
+    case 'JP': return `+81 90-${randInt(1000,9999)}-${randInt(1000,9999)}`;
+    case 'AU': return `+61 4${randInt(100,999)} ${randInt(100,999)} ${randInt(100,999)}`;
+    default: return '+0000000000';
+  }
+}
+function addressFor(locale){
+  const entry = sample(CITIES[locale]||CITIES.US);
+  const city = entry[0], region = entry[1];
+  const zip = randInt(10000,99999);
+  return `${randomStreet()}, ${city}${region?(", "+region):""} ${zip}`;
+}
+function website(){
+  const host = sample(DOMAINS);
+  const path = sample(["","/~"+uuidShort(),"./"+sample(WORDS),"./"+sample(ADJ)]);
+  return `https://${host}${path}`;
+}
+
+/* ======== Avatars (SVG data-URI) ======== */
+function avatarSVG(initials){
+  const hue = randInt(0,360);
+  const bg = `hsl(${hue} 70% 45%)`;
+  const txt = `hsl(${(hue+200)%360} 80% 95%)`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'>
+    <rect width='100%' height='100%' rx='10' fill='${bg}'/>
+    <text x='50%' y='52%' text-anchor='middle' font-family='sans-serif' font-size='28' fill='${txt}' dy='.3em'>${initials||"U"}</text>
+  </svg>`;
+  return 'data:image/svg+xml;base64,'+btoa(svg);
+}
+
+/* ======== Security (MFA / Recovery / Q&A) ======== */
+function base32Secret(len=24){
+  const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let out=''; for(let i=0;i<len;i++) out+=alphabet[randInt(0,alphabet.length-1)];
+  return out;
+}
+function recoveryCodes(n=10){
+  const codes=[]; for(let i=0;i<n;i++) codes.push(uuidShort()+'-'+randInt(1000,9999)); return codes;
+}
+function securityQAs(){
+  const qs = []; const count = randInt(2,3);
+  for(let i=0;i<count;i++){ qs.push({q: sample(QUESTIONS), a: sample(WORDS)+randInt(10,99)}) }
+  return qs;
+}
+
+/* ======== Generation ======== */
+let data = []; // accounts array
+function validateBeforeGen(){
+  const c = parseInt(countEl.value,10);
+  if(!(c>=1 && c<=1000)) return "Count must be 1–1000.";
+  const L = parseInt(passLenEl.value,10);
+  if(!(L>=6 && L<=64)) return "Password length must be 6–64.";
+  if (accountTypeEl.value==='email' && emailProviderEl.value==='custom'){
+    const d = (customDomainEl.value||'').trim();
+    if(!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d)) return "Custom domain looks invalid.";
+  }
+  const minA=parseInt(minAgeEl.value,10), maxA=parseInt(maxAgeEl.value,10);
+  if(minA>maxA) return "Min age cannot exceed max age.";
+  return "";
+}
+function generate(){
+  const err = validateBeforeGen(); if(err){ alert(err); return; }
+  const count = parseInt(countEl.value,10);
+  const passLen = parseInt(passLenEl.value,10);
+  const pattern = usernamePatternEl.value;
+  const base = baseNameEl.value.trim();
+  const platform = accountTypeEl.value;
+  const provider = emailProviderEl.value;
+  const tag = recordsTagEl.value.trim();
+
+  const wantName = generateFullNamesEl.checked;
+  const nameStyle = genderEl.value;
+  const wantAvatar = generateAvatarsEl.checked;
+  const wantBio = includeBioEl.checked;
+
+  const wantDOB = includeDOBEl.checked;
+  const minA=parseInt(minAgeEl.value,10), maxA=parseInt(maxAgeEl.value,10);
+  const wantPhone = includePhoneEl.checked;
+  const phoneCountry = phoneCountryEl.value;
+  const wantAddress = includeAddressEl.checked;
+  const wantWebsite = includeWebsiteEl.checked;
+
+  const wantMFA = includeMFAEl.checked;
+  const wantRec = includeRecoveryEl.checked;
+  const wantQA = includeSecQAEl.checked;
+
+  const plusLabel = plusAliasEl.value.trim();
+
+  const out=[];
+  for(let i=0;i<count;i++){
+    const name = wantName ? fullName(nameStyle) : '';
+    let uname = usernameByPattern(pattern, base, name || base);
+    if (uniqueSuffixEl.checked && pattern!=='uuidShort') {
+      const sep = /[\.\-_]$/.test(uname)? '' : sample(['','.','_','-']);
+      uname = uname + sep + randInt(2,9999);
+    }
+
+    let identifier = uname;
+    if (platform==='email'){
+      identifier = buildEmail(uname, provider, plusLabel);
+    }
+
+    const password = generatePassword(passLen);
+    const dob = wantDOB ? randomDOB(minA,maxA) : '';
+    const phone = wantPhone ? phoneFor(phoneCountry) : '';
+    const address = wantAddress ? addressFor(localeEl.value) : '';
+    const url = wantWebsite ? website() : '';
+    const avatar = wantAvatar && name ? avatarSVG(initialsFromName(name)) : '';
+    const bio = wantBio ? sample(BIOS) : '';
+
+    const mfa = wantMFA ? base32Secret() : '';
+    const rec = wantRec ? recoveryCodes() : [];
+    const qas = wantQA ? securityQAs() : [];
+
+    out.push({
+      username: identifier,
+      handle: uname,
+      fullName: name,
+      password,
+      dob,
+      phone,
+      address,
+      website: url,
+      avatar,
+      bio,
+      mfaSecret: mfa,
+      recoveryCodes: rec,
+      securityQA: qas,
+      platform,
+      tag
+    });
+  }
+  data = data.concat(out);
+  render(); toast(`Generated ${out.length} accounts`);
+}
+
+/* ======== Render / Sort / Filter ======== */
+let sortKey = 'username', sortAsc = true;
+function render(){
+  // filter
+  const f = (filterInput.value||'').toLowerCase().trim();
+  let rows = data.map((d,i)=>({index:i,record:d}));
+  if (f){
+    rows = rows.filter(({record:r})=>{
+      return [r.username,r.fullName,r.platform,r.tag,r.handle].some(x=>String(x||'').toLowerCase().includes(f));
+    });
+  }
+  // sort
+  rows.sort((a,b)=>{
+    const A = String(a.record[sortKey]||'').toLowerCase();
+    const B = String(b.record[sortKey]||'').toLowerCase();
+    if (A<B) return sortAsc?-1:1;
+    if (A>B) return sortAsc?1:-1;
+    return 0;
+  });
+
+  // draw
+  tbody.innerHTML='';
+  rows.forEach(({index,record:r})=>{
+    const masked = maskPasswordsEl.checked ? '•'.repeat(Math.min(12,String(r.password||'').length)) : r.password;
+    const recStr = (r.recoveryCodes||[]).join(' ');
+    const qaStr = (r.securityQA||[]).map(q=>`${q.q} → ${q.a}`).join(' | ');
+    const avatarCell = r.avatar ? `<img alt="avatar" src="${r.avatar}" width="28" height="28" style="border-radius:6px;vertical-align:middle" />` : '';
+    const actions = `
+      <div class="actions">
+        <button class="outline small" data-act="copy" data-idx="${index}">Copy</button>
+        <button class="outline small" data-act="regen" data-idx="${index}">Regen PW</button>
+        <button class="outline small" data-act="del" data-idx="${index}">Delete</button>
+      </div>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td class="code">${escapeHTML(r.username)}</td>
+      <td>${escapeHTML(r.fullName||'')}</td>
+      <td class="code">${escapeHTML(masked||'')}</td>
+      <td class="code">${escapeHTML(r.dob||'')}</td>
+      <td class="code">${escapeHTML(r.phone||'')}</td>
+      <td>${escapeHTML(r.address||'')}</td>
+      <td class="code">${escapeHTML(r.mfaSecret||'')}</td>
+      <td class="code">${escapeHTML(recStr)}</td>
+      <td>${escapeHTML(qaStr)}</td>
+      <td>${avatarCell}</td>
+      <td>${escapeHTML(r.platform)}</td>
+      <td>${escapeHTML(r.tag||'')}</td>
+      <td>${actions}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  countBadge.textContent = `${rows.length} items`;
+  const has = data.length>0;
+  copyAllBtn.disabled = !has; exportCSVBtn.disabled = !has; exportJSONBtn.disabled = !has; exportBothBtn.disabled = !has;
+}
+function escapeHTML(s){ return String(s).replace(/[&<>'"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m])) }
+filterInput.addEventListener('input', render);
+previewTable.querySelector('thead').addEventListener('click', e=>{
+  const th = e.target.closest('[data-sort]'); if(!th) return;
+  const key = th.getAttribute('data-sort');
+  if (sortKey===key) sortAsc = !sortAsc; else { sortKey=key; sortAsc=true; }
+  render();
+});
+
+/* Row actions (copy, regen, delete) */
+tbody.addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-act]'); if(!btn) return;
+  const idx = parseInt(btn.dataset.idx,10);
+  const act = btn.dataset.act;
+  if (act==='copy'){
+    navigator.clipboard.writeText(JSON.stringify(data[idx],null,2)).then(()=>toast('Row copied'));
+  } else if (act==='regen'){
+    data[idx].password = generatePassword(parseInt(passLenEl.value,10));
+    render(); toast('Password regenerated');
+  } else if (act==='del'){
+    data.splice(idx,1); render(); toast('Row deleted');
+  }
+});
+
+/* ======== Export / Import ======== */
+function toCSV(rows){
+  const headers = ["username","handle","fullName","password","dob","phone","address","website","mfaSecret","recoveryCodes","securityQA","platform","tag","bio","avatar"];
+  const enc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const lines = [headers.join(',')];
+  rows.forEach(r=>{
+    const vals = [
+      r.username, r.handle, r.fullName, r.password, r.dob, r.phone, r.address, r.website,
+      r.mfaSecret, (r.recoveryCodes||[]).join(' '), (r.securityQA||[]).map(q=>`${q.q}->${q.a}`).join(' | '),
+      r.platform, r.tag, r.bio||'', r.avatar ? '[svg]' : ''
+    ].map(enc);
+    lines.push(vals.join(','));
+  });
+  return lines.join('\n');
+}
+function download(name, content, type='text/plain'){
+  const blob = new Blob([content], {type}); const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+copyAllBtn.addEventListener('click',()=>{
+  if(!data.length) return; navigator.clipboard.writeText(JSON.stringify(data,null,2)).then(()=>toast('All copied'));
+});
+exportCSVBtn.addEventListener('click', ()=> data.length && download('accounts.csv', toCSV(data), 'text/csv'));
+exportJSONBtn.addEventListener('click', ()=> data.length && download('accounts.json', JSON.stringify(data,null,2), 'application/json'));
+exportBothBtn.addEventListener('click', ()=>{
+  if(!data.length) return;
+  download('accounts.csv', toCSV(data), 'text/csv');
+  download('accounts.json', JSON.stringify(data,null,2), 'application/json');
+});
+
+/* Import */
+importBtn.addEventListener('click', ()=>{
+  try{
+    const arr = JSON.parse(importAreaEl.value||'[]');
+    if(!Array.isArray(arr)) throw new Error('JSON must be an array');
+    // shallow-validate objects
+    arr.forEach(o=>{ if(typeof o!=='object') throw new Error('Array items must be objects'); });
+    data = data.concat(arr); render(); toast(`Imported ${arr.length} rows`);
+  }catch(e){ alert('Import failed: '+e.message) }
+});
+clearDataBtn.addEventListener('click', ()=>{ data=[]; render(); toast('Cleared') });
+
+/* ======== Presets (localStorage) ======== */
+const PRESET_KEY = 'proacct_presets_v1';
+function getPresets(){ try{ return JSON.parse(localStorage.getItem(PRESET_KEY) || '{}') }catch{ return {} } }
+function setPresets(p){ localStorage.setItem(PRESET_KEY, JSON.stringify(p)) }
+savePresetBtn.addEventListener('click', ()=>{
+  const name = presetNameEl.value.trim(); if(!name){ alert('Enter a preset name'); return; }
+  const p = collectSettings(); const presets = getPresets(); presets[name]=p; setPresets(presets); toast('Preset saved');
+});
+loadPresetBtn.addEventListener('click', ()=>{
+  const presets = getPresets(); const names = Object.keys(presets);
+  if(!names.length){ alert('No presets saved'); return; }
+  const choice = prompt('Type preset name:\n'+names.join('\n')); if(!choice) return;
+  const p = presets[choice]; if(!p){ alert('Preset not found'); return; }
+  applySettings(p); toast('Preset loaded');
+});
+clearPresetsBtn.addEventListener('click', ()=>{ localStorage.removeItem(PRESET_KEY); toast('Presets cleared') });
+
+function collectSettings(){
+  return {
+    accountType: accountTypeEl.value, emailProvider: emailProviderEl.value, customDomain: customDomainEl.value, plusAlias: plusAliasEl.value,
+    usernamePattern: usernamePatternEl.value, baseName: baseNameEl.value, count: countEl.value,
+    uniqueSuffix: uniqueSuffixEl.checked, generateFullNames: generateFullNamesEl.checked, gender: genderEl.value, locale: localeEl.value,
+    generateAvatars: generateAvatarsEl.checked, includeBio: includeBioEl.checked,
+    passLen: passLenEl.value, passMode, cLower: cLowerEl.checked, cUpper: cUpperEl.checked, cNums: cNumsEl.checked, cSyms: cSymsEl.checked,
+    avoidAmbig: avoidAmbigEl.checked, maskPasswords: maskPasswordsEl.checked,
+    includeMFA: includeMFAEl.checked, includeRecovery: includeRecoveryEl.checked, includeSecQA: includeSecQAEl.checked,
+    includePhone: includePhoneEl.checked, includeDOB: includeDOBEl.checked, includeAddress: includeAddressEl.checked, includeWebsite: includeWebsiteEl.checked,
+    phoneCountry: phoneCountryEl.value, minAge: minAgeEl.value, maxAge: maxAgeEl.value, recordsTag: recordsTagEl.value
+  };
+}
+function applySettings(s){
+  accountTypeEl.value = s.accountType||'email';
+  emailProviderEl.value = s.emailProvider||'gmail.com';
+  customDomainEl.value = s.customDomain||'';
+  plusAliasEl.value = s.plusAlias||'';
+  usernamePatternEl.value = s.usernamePattern||'nameNum';
+  baseNameEl.value = s.baseName||'';
+  countEl.value = s.count||20;
+  uniqueSuffixEl.checked = !!s.uniqueSuffix;
+  generateFullNamesEl.checked = !!s.generateFullNames;
+  genderEl.value = s.gender||'neutral';
+  localeEl.value = s.locale||'US';
+  generateAvatarsEl.checked = !!s.generateAvatars;
+  includeBioEl.checked = !!s.includeBio;
+
+  passLenEl.value = s.passLen||12; passMode = s.passMode||'random';
+  qsa('#passMode .pill').forEach(p=>p.classList.toggle('active', p.dataset.mode===passMode));
+  cLowerEl.checked = s.cLower!==undefined?s.cLower:true;
+  cUpperEl.checked = s.cUpper!==undefined?s.cUpper:true;
+  cNumsEl.checked = s.cNums!==undefined?s.cNums:true;
+  cSymsEl.checked = !!s.cSyms;
+  avoidAmbigEl.checked = !!s.avoidAmbig;
+  maskPasswordsEl.checked = !!s.maskPasswords;
+
+  includeMFAEl.checked = !!s.includeMFA;
+  includeRecoveryEl.checked = !!s.includeRecovery;
+  includeSecQAEl.checked = !!s.includeSecQA;
+
+  includePhoneEl.checked = !!s.includePhone;
+  includeDOBEl.checked = !!s.includeDOB;
+  includeAddressEl.checked = !!s.includeAddress;
+  includeWebsiteEl.checked = !!s.includeWebsite;
+
+  phoneCountryEl.value = s.phoneCountry||'US';
+  minAgeEl.value = s.minAge||18; maxAgeEl.value = s.maxAge||65;
+  recordsTagEl.value = s.recordsTag||'';
+  syncProviderUI(); updateMeter();
+}
+
+/* ======== Buttons ======== */
+generateBtn.addEventListener('click', generate);
+
+/* ======== Initial ======== */
+render(); // empty table
+
+</script>
+</body>
+</html>

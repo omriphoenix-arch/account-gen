@@ -1,0 +1,1 @@
+{"player": {"name": "Hero", "health": 120, "max_health": 120, "attack": 20, "defense": 8, "speed": 8, "level": 1, "xp": 0}, "inventory": {"Healing Potion": 3, "Iron": 5, "Leather": 3}, "gold": 100}
