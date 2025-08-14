@@ -1,1 +1,2 @@
 # account-gen
+with this application you will be able to produce account passwords and usernames/emails (note:these are not premade this is just information you can copy and paste into a service to sign up not sign in!) you are allowed to add and remove features at will i do not care whatsoever if you use my version and change it to your liking after the point of install the source code is yours to mess with
